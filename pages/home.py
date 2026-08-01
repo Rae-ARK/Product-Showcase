@@ -38,5 +38,5 @@ def home():
             class_name="stack cta",
         ),
         footer(),
-        title="Home",
+        title="Home - Product Showcase",
     )
