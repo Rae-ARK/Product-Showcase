@@ -96,10 +96,35 @@ zipping by position.
 subfolder per phone plus a shared `hero/` folder. **ARKlight does not
 validate that referenced image files actually exist** -- the build
 succeeds either way, since it only emits `<img src="...">` paths, never
-reads the image files themselves. The `assets/images/*` folders in this
-repo are currently empty placeholders; add real product photography
-before deploying, or every image will 404 in the browser despite a
-clean build.
+reads the image files themselves. A wrong filename or extension (e.g.
+`.jpeg` source renamed to `.jpg`, which is fine -- browsers don't care
+about extension vs. actual format for JPEG) will build clean and just
+404 in the browser.
+
+Real photography now lives at:
+
+```
+assets/images/hero/hero.jpg        -- home page hero (pages/home.py)
+assets/images/redmi9a/hero.jpg     -- content/phones.py (Redmi 9A)
+assets/images/pocof4/hero.jpg      -- content/phones.py (POCO F4)
+assets/images/iqooneo10r/hero.jpg  -- content/phones.py (iQOO Neo 10R)
+```
+
+**Gotcha:** the iQOO Neo 10R's route is `/neo10r`, but its `PHONES`
+slug and asset folder are `iqooneo10r`. Route naming and asset-folder
+naming are independent strings in this codebase -- don't assume they
+match when adding a new phone.
+
+**Bigger gotcha -- `arklight build` never copies `assets/` into
+`dist/`.** It only compiles the Python site file into HTML/CSS/JS.
+Every image path emitted in the HTML is relative to the built file
+(e.g. `dist/index.html` referencing `assets/images/hero/hero.jpg`
+means the browser looks for `dist/assets/images/hero/hero.jpg`), but
+the build step never creates that folder. Correct filenames at the
+correct paths in the *source* `assets/` tree are necessary but not
+sufficient -- you must also run `cp -r assets dist/assets` after every
+build, or copy it as part of a wrapper script/Makefile. See the
+`## Build` section in the README for the exact command.
 
 ---
 
@@ -192,6 +217,18 @@ not just the README.
    resolved `href` against `location.href`. It will never appear if you
    inspect the raw generated HTML (e.g. with `grep`) -- only when the
    page is actually loaded in a browser.
+
+5. **`arklight build` does not copy static assets into the output
+   directory.** It compiles `site.py` and its page/component tree into
+   HTML/CSS/JS in `dist/`, but `assets/` (images, and presumably any
+   other static files) is never touched -- there's no asset-pipeline
+   step in the CLI at all (`arklight build --help` confirms: just
+   `entry`, `-o/--output`, `--open/--no-open`). Every `<img
+   src="assets/...">` path is correct relative to the built HTML, but
+   resolves to nothing until you separately run `cp -r assets
+   dist/assets` (or equivalent) after every build. Easy to miss because
+   the build reports success and the HTML looks completely correct --
+   the images just silently 404 in the browser.
 
 ---
 
