@@ -4,7 +4,17 @@ Plain Python -- no ARKlight involved here at all. Pages import this and
 loop over it, keeping specification data out of presentation code.
 Specs are approximate/representative for showcase purposes; update with
 exact figures before shipping.
+
+Note: `route` and `image`'s folder name are independent strings by
+design (e.g. iQOO Neo 10R is routed at /neo10r but its asset folder is
+iqooneo10r) -- don't assume they match when adding a phone. The
+assert_asset_exists() call at the bottom of this file is what actually
+guards against that class of mistake: it fails the build immediately
+if a phone's image path is wrong, rather than letting a typo silently
+404 in the browser.
 """
+
+from content.validate import assert_asset_exists
 
 PHONES = [
     {
@@ -62,3 +72,6 @@ PHONES = [
         ],
     },
 ]
+
+for _phone in PHONES:
+    assert_asset_exists(_phone["image"], context=f"content/phones.py ({_phone['slug']})")

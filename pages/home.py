@@ -13,6 +13,10 @@ from components.footer import footer
 from components.hero import hero
 from components.card import card
 from content.phones import PHONES
+from content.validate import assert_asset_exists
+
+HERO_IMAGE = "assets/images/hero/hero.jpg"
+assert_asset_exists(HERO_IMAGE, context="pages/home.py hero image")
 
 
 def home():
@@ -23,7 +27,7 @@ def home():
             "Three phones, three price points, one place to compare them.",
             "See the lineup",
             "#featured",
-            "assets/images/hero/hero.jpg",
+            HERO_IMAGE,
             image_alt="Product showcase hero image",
         ),
         Container(
