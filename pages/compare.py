@@ -15,6 +15,22 @@ from content.phones import PHONES
 
 DEFAULT_PICK_MESSAGE = "Tap a phone below to see your pick here."
 
+# NOTE: Page(..., style={...}) does nothing -- confirmed by reading
+# arklight/backend/html/render.py's _render_page: for the Page node
+# specifically, it only ever emits data-ark-state on <body>, silently
+# dropping every other prop (style, class_name, id). That's a real
+# ARKlight limitation, not a bug in this project. To widen just this
+# page beyond the site-wide --ark-max-width (720px, set on <body>),
+# this wraps the page content in a Container using a userland CSS
+# full-bleed technique instead -- no compiler change involved.
+WIDE_STYLE = {
+    "max-width": "1100px",
+    "width": "100vw",
+    "position": "relative",
+    "left": "50%",
+    "transform": "translateX(-50%)",
+}
+
 
 def compare():
     return Page(
@@ -22,46 +38,49 @@ def compare():
         # validator rejects it nested inside a Section or Container.
         State("budget_pick", DEFAULT_PICK_MESSAGE),
         nav(),
-        Section(
-            Heading("Compare"),
-            Text("Every spec, side by side.", class_name="muted"),
-            class_name="stack",
-        ),
-        Section(
-            Heading("Quick pick", level=2),
-            Text(Bind("budget_pick"), class_name="muted"),
-            Container(
-                *[
+        Container(
+            Section(
+                Heading("Compare"),
+                Text("Every spec, side by side.", class_name="muted"),
+                class_name="stack",
+            ),
+            Section(
+                Heading("Quick pick", level=2),
+                Text(Bind("budget_pick"), class_name="muted"),
+                Container(
+                    *[
+                        Button(
+                            phone["name"],
+                            on_click=Action.set(
+                                "budget_pick",
+                                f"You picked the {phone['name']} -- {phone['price']}.",
+                            ),
+                        )
+                        for phone in PHONES
+                    ],
                     Button(
-                        phone["name"],
-                        on_click=Action.set(
-                            "budget_pick",
-                            f"You picked the {phone['name']} -- {phone['price']}.",
-                        ),
-                    )
-                    for phone in PHONES
-                ],
-                Button(
-                    "Clear",
-                    on_click=Action.set("budget_pick", DEFAULT_PICK_MESSAGE),
-                    class_name="muted",
+                        "Clear",
+                        on_click=Action.set("budget_pick", DEFAULT_PICK_MESSAGE),
+                        class_name="muted",
+                    ),
+                    class_name="cluster",
                 ),
+                class_name="stack",
+            ),
+            Section(
+                Heading("Compare at a glance", level=2),
+                compare_cards(PHONES),
+                class_name="stack",
+            ),
+            Details(
+                Summary("Full specification table"),
+                compare_table(PHONES),
+            ),
+            Container(
+                *[Link(f"{phone['name']} page", href=phone["route"]) for phone in PHONES],
                 class_name="cluster",
             ),
-            class_name="stack",
-        ),
-        Section(
-            Heading("Compare at a glance", level=2),
-            compare_cards(PHONES),
-            class_name="stack",
-        ),
-        Details(
-            Summary("Full specification table"),
-            compare_table(PHONES),
-        ),
-        Container(
-            *[Link(f"{phone['name']} page", href=phone["route"]) for phone in PHONES],
-            class_name="cluster",
+            style=WIDE_STYLE,
         ),
         footer(),
         title="Compare - Product Showcase",
