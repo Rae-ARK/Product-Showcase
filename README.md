@@ -1,43 +1,57 @@
 # Product Showcase
 
-A demonstration website built using ARKlight v0.003.
+A production-track demonstration site built with [ARKlight](https://pypi.org/project/arklight/),
+showing what an ARKlight site looks like when it targets more than
+"it built once." Three products, a comparison page, a gallery, and a
+build pipeline that ships to the web, as an installable PWA, and as a
+single portable offline file -- all from the same source.
 
-## Before you build: install ARKlight first
+## Install
 
-**ARKlight is not on PyPI.** This project won't build until you clone
-and install the framework itself, in the same Python environment
-you'll run `arklight build` from:
+ARKlight is on PyPI now -- no source clone required:
 
 ```bash
-git clone https://github.com/Rae-ARK/ARKlight.git
-cd ARKlight
-pip install -e .
+pip install arklight
 ```
 
-Requires Python 3.10+. No other runtime dependencies. Verified against
-commit `840e295`.
-
-If `arklight build` fails with `ModuleNotFoundError: No module named
-'arklight'`, that's this step -- go run it in your venv.
+Requires Python 3.10+. Verified against `arklight` 0.37 (the CLI's
+own `--version` output currently reports `0.038`, a known cosmetic
+mismatch upstream -- `pip show arklight` is the accurate source of
+truth for what's actually installed).
 
 ## Build
 
 ```bash
 arklight build site.py -o dist
-cp -r assets dist/assets
 ```
 
-**The `cp -r assets dist/assets` step is required.** `arklight build`
-only compiles `site.py` into HTML/CSS/JS -- it never copies the
-`assets/` folder into `dist/`. Every page's `<img src="assets/...">`
-is a path relative to the built HTML file, so without this step
-`dist/` has no `assets/` folder at all and every image 404s in the
-browser, even though the build itself reports success and every path
-in the HTML is correct.
+That's the whole command. `assets/` is copied into `dist/assets`
+automatically as of the version pinned above -- this used to require a
+manual `cp -r assets dist/assets` step; that gap has been fixed
+upstream and this project no longer needs the workaround. (If you're
+building against an older ARKlight install and images 404, that's why
+-- upgrade.)
 
 Output lands in `dist/`: `index.html`, `redmi9a.html`, `pocof4.html`,
 `neo10r.html`, `compare.html`, `gallery.html`, `styles.css`,
-`arklight.js`.
+`arklight.js`, plus `assets/`.
+
+## Multi-platform build
+
+The same `dist/` output feeds two additional distribution targets,
+both native to ARKlight's CLI:
+
+```bash
+# Installable, offline-capable PWA (adds manifest.json + service worker)
+arklight pwa dist --name "Product Showcase" --theme-color "#0f172a" --display standalone
+
+# Single-file offline handoff bundle (no server required to view it)
+arklight pack dist -o product-showcase.ark --plain
+```
+
+Run `pwa` before `pack` if you want the offline bundle to include the
+installable manifest too -- both operate on the same directory and are
+order-insensitive otherwise.
 
 ## Pages
 
@@ -45,42 +59,23 @@ Output lands in `dist/`: `index.html`, `redmi9a.html`, `pocof4.html`,
 - Redmi 9A
 - POCO F4
 - iQOO Neo 10R
-- Compare
+- Compare (responsive spec comparison)
 - Gallery
 
-All six are implemented and build cleanly. See `architecture.md` for
-the full component/content breakdown and a list of real ARKlight
-gotchas hit while building this (route registration syntax, an
-`__init__.py` export gap for `Picture`/`PictureSource`/etc., and a
-couple of cosmetic rendering quirks).
+See `architecture.md` for the full component/content breakdown, the
+staged production roadmap, and a running list of real ARKlight
+behavior notes hit while building this (route registration syntax,
+an `__init__.py` export gap for `Picture`/`PictureSource`/etc., and
+a couple of cosmetic rendering quirks).
 
 ## Images
 
-Real product photos are now in place. Each file must sit at the exact
-path/filename the code expects -- ARKlight does not check that
-referenced image files exist, so a wrong path builds cleanly and just
-404s the `<img>` in the browser instead of failing the build.
-
-| Path | Referenced from |
-|---|---|
-| `assets/images/hero/hero.jpg` | `pages/home.py` (home page hero banner) |
-| `assets/images/redmi9a/hero.jpg` | `content/phones.py` (Redmi 9A) |
-| `assets/images/pocof4/hero.jpg` | `content/phones.py` (POCO F4) |
-| `assets/images/iqooneo10r/hero.jpg` | `content/phones.py` (iQOO Neo 10R) |
-
-Note the phone slug for the iQOO Neo 10R is `iqooneo10r`, not `neo10r`
-(the route is `/neo10r`, but the asset folder and `PHONES` slug are
-`iqooneo10r` -- easy to trip over).
-
-Extra unused source photos are left in `assets/images/hero/` (e.g.
-`redmi.jpeg`, `poco.jpeg`) as spares for swapping the home page hero
-later -- ARKlight only ever reads the exact path passed in code, so
-extra files are ignored and harmless.
-
-Having the right files at the right paths is necessary but **not
-sufficient** -- see the `cp -r assets dist/assets` step in Build above.
-Without it, correctly-named images still won't appear, because they
-never get copied into `dist/` in the first place.
+Real product photos live under `assets/images/`, one subfolder per
+phone plus a shared `hero/` folder. ARKlight does not validate that a
+referenced image file exists at build time -- a wrong path builds
+clean and 404s the `<img>` in the browser. See `architecture.md` for
+the exact path table and a build-time guard against this class of
+bug.
 
 ## Project layout
 
@@ -94,4 +89,16 @@ product-showcase/
 ├── pages/
 └── content/
 ```
-# Product-Showcase
+
+## Roadmap status
+
+This project is being rebuilt in stages toward a genuinely
+production-grade, multi-platform reference site. Current stage:
+
+- [x] **1. Documentation** -- this pass
+- [ ] **2. Content/data layer** -- route/slug fragility fix, asset-existence guard
+- [ ] **3. Component refactor** -- responsive compare view, real interactivity, dependency pin
+- [ ] **4. Multi-platform build** -- PWA + `.ark` bundle wired into the build pipeline
+- [ ] **5. CI/CD** -- GitHub Actions build-and-verify on PRs, deploy to Pages on merge
+
+See `architecture.md` -> "Roadmap" for scope detail on each stage.
