@@ -38,8 +38,26 @@ def home():
         Container(
             Heading("Not sure which one fits?", level=2),
             Text("Compare specs side by side across all three phones."),
-            Link("Open comparison", href="/compare", class_name="button-link"),
+            Link(
+                "Open comparison",
+                href="/compare",
+                class_name="button-link",
+                style={
+                    "display": "inline-block",
+                    "background": "var(--ark-accent)",
+                    "color": "#ffffff",
+                    "font-weight": "600",
+                    "padding": "0.65em 1.4em",
+                    "border-radius": "8px",
+                },
+            ),
             class_name="stack cta",
+            style={
+                "background": "var(--ark-border)",
+                "border-radius": "12px",
+                "padding": "2rem 1.75rem",
+                "text-align": "center",
+            },
         ),
         footer(),
         title="Home - Product Showcase",

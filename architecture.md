@@ -228,20 +228,20 @@ Verified against ARKlight's actual source, not just its README.
    function in a thin `@site.page(...)` function in `site.py` for
    exactly this reason).
 
-2. **`from arklight import *` doesn't expose everything in the
-   schema.** `arklight/__init__.py` only re-exports the first
-   vocabulary addendum (semantic layout, text-level semantics, forms,
-   tables, Video/Audio/Source). The entire second addendum --
-   `Picture`, `PictureSource`, `OrderedList`,
+2. **Resolved, no longer a gotcha: the second component addendum.**
+   Previously `arklight/__init__.py` only re-exported the first
+   vocabulary addendum, and the full second addendum -- `Picture`,
+   `PictureSource`, `OrderedList`,
    `DescriptionList`/`DescriptionTerm`/`DescriptionDetails`,
    `Progress`, `Meter`, `Datalist`, `Output`, `Dialog`, `Kbd`, `Samp`,
    `Var`, `Data`, `Ins`, `Del`, `Q`, `Dfn`, `Address`, `Wbr`, `Bdi`,
    `Bdo`, `Ruby`/`Rt`/`Rp`, `ColGroup`, `Col`, `Track`, `Map`, `Area`,
-   `IFrame`, `NoScript` -- is fully implemented and compiles/validates
-   fine, but is **not** in `__init__.py`'s import list. Import
-   directly from the submodule instead, e.g.
-   `from arklight.api import Picture, PictureSource` (used in
-   `pages/gallery.py`).
+   `IFrame`, `NoScript` -- had to be imported from the `arklight.api`
+   submodule directly. Confirmed fixed against the currently pinned
+   version: every name above now imports cleanly straight from
+   `arklight` (verified with a direct import check). `pages/gallery.py`
+   now imports `Picture`/`PictureSource` straight from `arklight`
+   like everything else -- no submodule workaround needed.
 
 3. **`TableHeaderCell`/`TableCell` auto-wrap bare strings in `<p>`.**
    They're real containers (not `text_only_children`), so
@@ -262,3 +262,33 @@ Verified against ARKlight's actual source, not just its README.
 6. **Resolved, no longer a gotcha:** `arklight build` copying
    `assets/` automatically. Previously required a manual `cp -r`
    step; confirmed fixed in the currently pinned version.
+
+7. **ARKlight has no mechanism for a project to add its own CSS
+   rules.** Confirmed by reading `arklight/backend/css/render.py`
+   directly: the CSS backend emits one fixed, constant stylesheet
+   (utility classes + bare-tag defaults) and that's the entire
+   output -- there's no `Site(custom_css=...)` hook, no
+   project-stylesheet merge step in the compiler pipeline, and no way
+   to register a rule under a class name of your own choosing. A
+   `class_name` that isn't one of ARKlight's own built-in classes
+   (`.stack`, `.cluster`, `.card`, etc.) is **silently inert** -- it
+   compiles fine, appears in the markup, and does nothing.
+   This bit this project directly: `price`, `button-link`, `cta`, and
+   `site-footer` were all project-invented class names with zero
+   backing anywhere, so the price never stood out from body text, the
+   "Open comparison" CTA rendered as a plain link, the CTA section had
+   no visual separation, and the footer had no separator. **Fixed by
+   switching those four to per-node `style={...}` dicts** (the only
+   customization mechanism ARKlight actually supports beyond its own
+   fixed classes) -- see `components/card.py`, `compare_cards.py`,
+   `footer.py`, and `pages/home.py`. The inert `class_name`s were left
+   in place alongside the new `style=` props, since they're harmless
+   and self-document intent for if/when ARKlight adds real custom-CSS
+   support.
+
+8. **Hardcoded version strings drift.** `components/footer.py` said
+   "built with ARKlight v0.003" long after the pinned version moved to
+   0.37 -- nothing catches that kind of drift automatically. Fixed by
+   reading `importlib.metadata.version("arklight")` at build time
+   instead of hardcoding a string, so the footer can't go stale again.
+

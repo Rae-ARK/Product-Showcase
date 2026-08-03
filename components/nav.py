@@ -3,7 +3,10 @@
 Plain Python function composition -- ARKlight has no dedicated component
 system yet (that's the planned v0.010 milestone), so reuse today means
 calling other functions. Current-page highlighting (`.is-active` on the
-matching link) happens automatically at build time; no props needed here.
+matching link) happens automatically, client-side, via arklight.js
+comparing each link's resolved href against location.href on page
+load -- it won't show up in the raw generated HTML, only in a browser.
+No props needed here either way.
 """
 
 from arklight import Nav, Link

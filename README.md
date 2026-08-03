@@ -77,6 +77,20 @@ clean and 404s the `<img>` in the browser. See `architecture.md` for
 the exact path table and a build-time guard against this class of
 bug.
 
+## Recent fixes
+
+A rendered-output audit (not just "does it compile") turned up one
+real gap: ARKlight has no mechanism for a project to add its own CSS
+rules (confirmed against `arklight/backend/css/render.py`) -- a
+`class_name` that isn't one of ARKlight's built-in classes is silently
+inert. This project had four such classes (`price`, `button-link`,
+`cta`, `site-footer`) rendering with zero styling as a result. Fixed
+by moving those to per-node `style={...}` props, the only
+customization mechanism ARKlight actually supports beyond its fixed
+class set. Also fixed a stale hardcoded `"ARKlight v0.003"` string in
+the footer -- now read live via `importlib.metadata`. Full detail in
+`architecture.md` -> "Known ARKlight behavior notes" (items 7-8).
+
 ## Project layout
 
 ```
@@ -96,9 +110,9 @@ This project is being rebuilt in stages toward a genuinely
 production-grade, multi-platform reference site. Current stage:
 
 - [x] **1. Documentation** -- this pass
-- [ ] **2. Content/data layer** -- route/slug fragility fix, asset-existence guard
-- [ ] **3. Component refactor** -- responsive compare view, real interactivity, dependency pin
-- [ ] **4. Multi-platform build** -- PWA + `.ark` bundle wired into the build pipeline
+- [x] **2. Content/data layer** -- route/slug fragility fix, asset-existence guard
+- [x] **3. Component refactor** -- responsive compare view, real interactivity, dependency pin
+- [x] **4. Multi-platform build** -- PWA + `.ark` bundle, verified working (`arklight pwa` / `arklight pack` / `arklight unpack` round-tripped clean against this build)
 - [ ] **5. CI/CD** -- GitHub Actions build-and-verify on PRs, deploy to Pages on merge
 
 See `architecture.md` -> "Roadmap" for scope detail on each stage.
